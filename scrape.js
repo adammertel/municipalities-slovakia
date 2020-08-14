@@ -1,5 +1,9 @@
 const cheerio = require("cheerio");
 var axios = require("axios");
+var GeoJSON = require("geojson");
+var converter = require("json-2-csv");
+var shpConverter = require("geojson2shp");
+var fs = require("fs");
 
 var rootUrl = "https://sk.wikipedia.org/";
 
@@ -58,7 +62,7 @@ const scrap = async () => {
 
         // get name and the link
         if (ci === 0) {
-          municipality.name = columnEl.text().replace(/\s/g, "");
+          municipality.name = columnEl.text().trim();
           municipality.link = columnEl("a").attr("href");
         }
       });
@@ -70,52 +74,83 @@ const scrap = async () => {
 
   // iterate all municipalities
   for (var si in municipalities) {
-    if (si < 5000) {
-      const municipality = municipalities[si];
-      const municipalityHtml = await getBodyOfUrl(rootUrl + municipality.link);
-      const municipalityEl = cheerio.load(municipalityHtml);
+    //if (si < 10) {
+    const municipality = municipalities[si];
+    const municipalityHtml = await getBodyOfUrl(rootUrl + municipality.link);
+    const municipalityEl = cheerio.load(municipalityHtml);
+    console.log(
+      "parsing",
+      municipality.name,
+      parseInt((si / municipalities.length) * 100) + "%"
+    );
 
-      municipalityEl(".infobox tr").map((ri, row) => {
-        const rowEl = cheerio.load(row);
-        const rowTitle = rowEl("tr th").text().trim();
-        //console.log(rowTitle);
+    municipalityEl(".infobox tr").map((ri, row) => {
+      const rowEl = cheerio.load(row);
+      const rowTitle = rowEl("tr th").text().trim();
+      //console.log(rowTitle);
 
-        if (rowTitle === "Obyvateľstvo") {
-          municipality.population = parseInt(
-            rowEl("tr td").contents().first().text().trim().replace(/\s/g, "")
-          );
-        } else if (rowTitle === "Kraj") {
-          municipality.region = rowEl("tr td").contents().first().text().trim();
-        } else if (rowTitle === "Okres") {
-          municipality.district = rowEl("tr td")
-            .contents()
-            .first()
-            .text()
-            .trim();
-        } else if (rowTitle === "Región") {
-          municipality.region_historical = rowEl("tr td")
-            .contents()
-            .first()
-            .text()
-            .trim();
-        } else if (rowTitle === "Rozloha") {
-          municipality.area = parseFloat(
-            rowEl("tr td").contents().first().text().trim().replace(",", ".")
-          );
-        } else if (rowTitle === "Prvá pís. zmienka") {
-          municipality.first_mentioned = parseYear(
-            rowEl("tr td").contents().first().text().trim()
-          );
-        } else if (rowTitle === "Nadmorská výška") {
-          municipality.elevation = parseInt(
-            rowEl("tr td").contents().first().text().trim()
-          );
-        }
-      });
-
-      //console.log(municipality);
-    }
+      if (rowTitle === "Obyvateľstvo") {
+        municipality.population = parseInt(
+          rowEl("tr td").contents().first().text().trim().replace(/\s/g, "")
+        );
+      } else if (rowTitle === "Kraj") {
+        municipality.region = rowEl("tr td").contents().first().text().trim();
+      } else if (rowTitle === "Okres") {
+        municipality.district = rowEl("tr td").contents().first().text().trim();
+      } else if (rowTitle === "Región") {
+        municipality.region_historical = rowEl("tr td")
+          .contents()
+          .first()
+          .text()
+          .trim();
+      } else if (rowTitle === "Rozloha") {
+        municipality.area = parseFloat(
+          rowEl("tr td").contents().first().text().trim().replace(",", ".")
+        );
+      } else if (rowTitle === "Prvá pís. zmienka") {
+        municipality.first_mentioned = parseYear(
+          rowEl("tr td").contents().first().text().trim()
+        );
+      } else if (rowTitle === "Nadmorská výška") {
+        municipality.elevation = parseInt(
+          rowEl("tr td").contents().first().text().trim()
+        );
+      } else if (rowTitle === "Súradnice") {
+        const coordinates = replace(
+          rowEl("tr span.geo-dec").text().trim(),
+          [","],
+          "."
+        )
+          .split(" ")
+          .map((coord) => parseFloat(coord));
+        municipality.coordinate_x = coordinates[0];
+        municipality.coordinate_y = coordinates[1];
+      }
+    });
   }
+  //console.log(municipality);
+  //}
+
+  // create and export .geojson
+  const geojson = GeoJSON.parse(municipalities, {
+    Point: ["coordinate_x", "coordinate_y"],
+  });
+  fs.writeFileSync(
+    "./out/municipalities-slovakia.geojson",
+    JSON.stringify(geojson)
+  );
+
+  // create and export .csv
+  converter.json2csv(municipalities, (err, csv) => {
+    fs.writeFileSync("./out/municipalities-slovakia.csv", csv);
+  });
+
+  // create zipped shapefile from the geojson
+  await shpConverter.convert(
+    "./out/municipalities-slovakia.geojson",
+    "./out/municipalities-shp.zip",
+    { layer: "municipalities-slovakia", targetCrs: 4326 }
+  );
 };
 
 scrap();
