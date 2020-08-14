@@ -1,0 +1,23 @@
+{
+  "name": "municipalities-slovakia",
+  "version": "0.1.0",
+  "description": "https://sk.wikipedia.org/wiki/Zoznam_slovensk%C3%BDch_obc%C3%AD_a_vojensk%C3%BDch_obvodov",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adammertel/municipalities-slovakia.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adammertel/municipalities-slovakia/issues"
+  },
+  "homepage": "https://github.com/adammertel/municipalities-slovakia#readme",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "cheerio": "^1.0.0-rc.3"
+  }
+}
