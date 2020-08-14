@@ -1,6 +1,6 @@
 # municipalities-slovakia
 
-The GIS dataset of all municipalities in Slovakia taken from [wikipedia page](https://sk.wikipedia.org/wiki/Zoznam_slovensk%C3%BDch_obc%C3%AD_a_vojensk%C3%BDch_obvodov).
+GIS dataset of all municipalities in Slovakia taken from the [wikipedia page](https://sk.wikipedia.org/wiki/Zoznam_slovensk%C3%BDch_obc%C3%AD_a_vojensk%C3%BDch_obvodov).
 
 <img src="./image.png" alt="map screen" height="500" />
 
@@ -9,13 +9,13 @@ The GIS dataset of all municipalities in Slovakia taken from [wikipedia page](ht
 Each municipality has several attributes:
 
 - **name**
-- **link** - wikipedia link to the particular settlement, the data source for all the information
+- **link** - the wikipedia link to the particular settlement, the source for all the attributes
 - **region** - kraj
 - **district** - okres
 - **region_historical**
 - **elevation**
 - **area**
-- **population** - from 2019
+- **population** - year 2019
 - **first_mentioned**
 
 ## Output
